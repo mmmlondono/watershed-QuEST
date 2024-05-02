@@ -13,8 +13,9 @@ library(stars)
 library("vroom")
 #whitebox::install_whitebox()
 library(whitebox)
+library(colorbre)
 
-#install.packages("whitebox")
+install.packages("colorbrewer")
 
 ####MAKE POUR POUNT LOCATION DATAFRAME####
 #load data
@@ -296,8 +297,11 @@ mapview(dem) + mapview(streams, color = "blue") + mapview(newmex_smr, geometry =
   mapview(newmex_ws)  
 
 
-mapview(streams, color = "lightblue", legend = FALSE) + mapview(newmex_smr, geometry = "geometry", col.regions = "black", legend = FALSE) +
-  mapview(newmex_ws)
+mapview(streams, color = "blue", legend = FALSE) + mapview(newmex_smr, geometry = "geometry", col.regions = "black", legend = FALSE, cex = 4) +
+  mapview(newmex_ws, zcol = "shed_newmex", burst = TRUE, col.regions = brewer.pal(7, "Set3"))
+
+mapview(streams, color = "dodgerblue3", legend = FALSE) +
+  mapview(newmex_ws, zcol = "shed_newmex", burst = TRUE, col.regions = brewer.pal(7, "Set3"))
 
 ?mapview
 
