@@ -25,7 +25,7 @@ library(scales)
 library(readxl)
 
 ####READ IN DATA AND TIDY####
-# You can find this dataset in the GDrive
+#Data from NH chem
 data <- read.csv("data/QuEST-all.csv")
 
 # check data classes 
@@ -89,9 +89,20 @@ df <- dplyr::select(NM_data, Site, Sample.Name, year, NPOC, TDN, NH4, PO4, Cl)
 #selecting only the columns lon and lat from df2
 webstermain_subset <- webstermain %>% dplyr::select(Site, lon, lat)
 
-# Merging df with df2_subset based on the common column Sub_ProjectB
+#merge all of that
 df <- left_join(df, webstermain_subset, by = "Site")
 df <- distinct(df, Sample.Name, .keep_all = TRUE)
+
+#remove the "USF" part from the "Site" column
+df$Site <- gsub("^USF", "", df$Site)
+
+###Now load area data frame###
+site_areas <- read.csv("data/site_areas.csv")
+
+#Change "Site" to chr
+site_areas$Site <- as.character(site_areas$Site)
+#merge areas to the entire dataset
+df <- left_join(df, site_areas, by = "Site")
 
 # ---- 1. Catchment Chemical Structure  ----
 # You will want to melt your dataframe from wide to long here!

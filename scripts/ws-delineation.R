@@ -153,22 +153,6 @@ wbt_watershed(
 newmex_ws <- raster(paste0("temp/shed_newmex.tif"))
 mapview(newmex_ws)
 
-
-#plot areas with collection points
-#for that i need the newmex_ws as a polygon
-newmex_ws_poly <- rasterToPolygons(newmex_ws, dissolve = TRUE)
-#and then I can plot it
-mapview(newmex_ws_poly) + 
-  mapview(outlet, col.regions = "red")
-
-mapview(outlet, col.regions = "red")
-
-# Check CRS of outlet
-st_crs(outlet)
-
-# Check CRS of newmex_ws_poly
-st_crs(newmex_ws_poly)
-
 #1.9 -----
 #converts newmex_ws into a stars object, it is a multi-dimensional array that represents raster data.
 newmex_ws <- st_as_stars(newmex_ws) %>% st_as_sf(merge=T) #it says to skip but it works with this one
@@ -292,28 +276,31 @@ write.csv(site_areas, "data/site_areas")
 #not the best way to do all of this; it's just what worked for me this first try
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#Step 2: prep sensor data and add to map
+#Step 2: prep sensor data and add to 
+
+map
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #2.1 edit data for better analysis
 #2.2 convert to spatial data
 #0.3 map it
 
 #2.1 -----
-#separate if we want to put sensor sites- can keep this for now with just pour points
-newmex_smr <- sites %>% 
-  mutate(ID = substr(Site, 1, 3),
-         Type = substr(Site, 4, nchar(Site)))
-
-newmex_smr <- newmex_pourpoints %>% 
-  dplyr::filter(Type == "NM") %>% 
-  dplyr::select(ID, Long, Lat)
-
-newmex_smr <- st_as_sf(newmex_smr, coords = c("lon", "lat"), crs = '+proj=longlat +datum=WGS84 +no_defs')
+newmex_smr <- st_as_sf(sites, coords = c("lon", "lat"), crs = '+proj=longlat +datum=WGS84 +no_defs')
 newmex_smr <- st_transform(newmex_smr, crs = '+proj=utm +zone=16 +datum=NAD83 +units=m +no_defs') %>% 
   st_geometry()
 
-mapview(dem) + mapview(streams, color = "blue") +
+# Plot using mapview, specifying the geometry column directly
+mapview(newmex_smr, geometry = "geometry")
+
+mapview(dem) + mapview(streams, color = "blue") + mapview(newmex_smr, geometry = "geometry") +
   mapview(newmex_ws)  
+
+
+mapview(streams, color = "lightblue", legend = FALSE) + mapview(newmex_smr, geometry = "geometry", col.regions = "black", legend = FALSE) +
+  mapview(newmex_ws)
+
+?mapview
+
 #mapview(newmex_stics, color = "lightblue", col.regions = "lightblue") +
 #mapview(newmex_smr, color = "red", col.regions = "red") +
 #mapview(newmex_ltms, color = "white", col.regions = "indianred") +
@@ -332,6 +319,14 @@ dem_extent <- raster(paste0("temp/cropped_dem_newmex.tif"))
 dem_extent
 extent_ws <- extent(-1213269, -1204441, 4114924, 4127796) #from the cropped dem
 crop_ws <- raster::crop(dem, extent_ws)
+
+map_europe2 <- map_europe +
+  tm_shape(europe_shape) +
+  tm_lines(alpha = 0.3)
+map_europe3 <- map_europe2  +
+  tm_shape(cities) +
+  tm_dots(size = 0.3)
+
 
 # Test plot to make sure it looks ok
 bgc <- tm_shape(crop_ws) +
@@ -360,7 +355,10 @@ bgc <- tm_shape(crop_ws) +
   #add compass and scale for spatial context 
   tm_compass(text.size = 2) +
   tm_scale_bar(text.size = 1.5)
-bgc
+bgc2 <- bgc +
+  tm_shape(newmex_smr) +
+  tm_dots(size = 0.3)
+bgc2
 
 dem.plot <- tm_shape(crop_ws) +
   tm_raster(palette = "-Greys", n = 10, alpha = 0.75, title = "Elevation [m]", legend.reverse = TRUE) +
@@ -428,3 +426,28 @@ dem_greymask <- tm_shape(masked_dem) +
   #add compass and scale for spatial context 
   tm_compass(text.size = 2) +
   tm_scale_bar(text.size = 1.5)
+
+#### Extra stuff
+
+#trying to plot areas with collection points
+#for that i need the newmex_ws as a polygon
+newmex_ws_poly <- rasterToPolygons(newmex_ws, dissolve = TRUE)
+#and then I can plot it
+mapview(newmex_ws_poly) + 
+  mapview(outlet, col.regions = "red")
+
+mapview(outlet, col.regions = "red")
+
+# Check CRS of outlet
+st_crs(outlet)
+
+# Check CRS of newmex_ws_poly
+st_crs(newmex_ws_poly)
+
+
+usethis::use_git_config(user.name = "mmmlondono", user.email = "manuelalg28@gmail.com")
+# Create a token (Note this will open a GitHub browser tab)
+## See steps 6-10 in GitHub's tutorial (link below)
+#usethis::create_github_token()
+# Now, give your token to RStudio
+gitcreds::gitcreds_set()
