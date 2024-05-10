@@ -13,11 +13,8 @@ library(stars)
 library("vroom")
 #whitebox::install_whitebox()
 library(whitebox)
-library(colorbre)
 
-install.packages("colorbrewer")
-
-####MAKE POUR POUNT LOCATION DATAFRAME####
+####MAKE POUR POINT LOCATION DATAFRAME####
 #load data
 webstermain = read_csv("data/webstermain.csv")
 
@@ -31,9 +28,13 @@ sites <- webstermain %>%
   distinct(Site, .keep_all = TRUE) %>%
   dplyr::select(Site, lat, lon)
 
+#we have to do one site at a time for now so filter site 1 out
+site <- sites %>% 
+  filter(Site == "USF2") 
+
 #convert it into barebones sf
 #tell it where your data is, what the coords are in the df, and the crs (FOR LAT LONG, WGS84)
-outlet <- st_as_sf(sites, coords = c("lon", "lat"), 
+outlet <- st_as_sf(site, coords = c("lon", "lat"), 
                    crs = '+proj=longlat +datum=WGS84 +no_defs')
 
 #reproject to utm 16
@@ -114,12 +115,14 @@ wbt_breach_depressions(
   output = "dem_newmex_breach.tif",
   wd = temp)
 
+
 #1.4 -----
 #Assigns flow direction
 wbt_d8_pointer(
   dem = "dem_newmex_breach.tif",
   output = "flowdir_newmex.tif",
   wd = temp)
+
 
 #1.5.1 -----
 #Computes flow accumulation
@@ -157,23 +160,15 @@ mapview(newmex_ws)
 #1.9 -----
 #converts newmex_ws into a stars object, it is a multi-dimensional array that represents raster data.
 newmex_ws <- st_as_stars(newmex_ws) %>% st_as_sf(merge=T) #it says to skip but it works with this one
+
 #plots watershed shapefile
 mapview(newmex_ws)
 #writes shapefile to data folder
 st_write(newmex_ws, paste0("data/WS_newmex.shp"), delete_layer = T)
 #plots dem raster with newmex shapefile
-mapview(newmex_ws) + mapview(newmex_sensor) + mapview(dem)
-
+mapview(newmex_ws) + mapview(dem) + mapview(outlet)
 
 #crop the DEM to run again
-###this uses rgdal which was removed from the CRAN repository###
-#crop_extent <- readOGR(paste0("data/WS_newmex.shp"))
-#cropped_DEM <- crop(dem, crop_extent)
-#cropped_DEM <- readOGR(paste0(data_dir, "cropped_DEM.shp"))
-#plot(cropped_DEM)
-#plot(newmex_ws, add = T)
-
-###will try to use sf instead###
 #read the shapefile defining the extent to crop the DEM
 crop_extent <- st_read("data/WS_newmex.shp")
 #crop the DEM to the specified extent
@@ -251,7 +246,7 @@ writeRaster(cropped_DEM, paste0("data/croppedDEM.tif"), overwrite=T)
 
 #TO GET THE AREA OF YOUR WATERSHED POLYGONS it has to be in sf format
 sum(st_area(newmex_ws))
-#spits out 43690325 m^2 which is 4369 hectares, 10796 acres. 
+#spits out 45134561 m^2 which is 4513 hectares
 
 #to get the area of each polygon
 #change the site column name to match column names
@@ -268,8 +263,9 @@ areas <- st_area(merged_data_sf)
 
 # Create a data frame with site IDs and corresponding areas
 site_areas <- data.frame(Site = merged_data$shed_newmex, Area = areas)
-#save areas data frame
-write.csv(site_areas, "data/site_areas")
+
+
+#site 1: 45134561 [m^2]
 
 #--------
 

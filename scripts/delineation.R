@@ -240,9 +240,38 @@ names(wpfull)[names(wpfull) == "name"] <- "shed_newmex"
 wpfull$shed_newmex <- gsub("^USF", "", wpfull$shed_newmex)
 
 #calculate the area
-areas <- st_area(newmex_ws)
+allareas <- st_area(newmex_ws)
 
 # Create a data frame with site IDs and corresponding areas
-site_areas <- data.frame(Site = newmex_ws$shed_newmex, Area = areas)
+site_areas <- data.frame(Site = newmex_ws$shed_newmex, Area = allareas)
 site_areas
+
+#Site              Area
+#1    21  107968.749 [m^2]
+#2    20    1028.274 [m^2]
+#3     4  725961.300 [m^2]
+#4    20    1028.274 [m^2]
+#5     3  380461.305 [m^2]
+#6    20    1028.274 [m^2]
+#7    13  124421.129 [m^2]
+#8    19  742413.681 [m^2]
+#9     6  225191.961 [m^2]
+#10    1   25706.845 [m^2]
+#11   20  485345.232 [m^2]
+#12   16 5567074.333 [m^2]
+#13   11    4113.095 [m^2]
+#14   11    1028.274 [m^2]
+#15    9 5009749.936 [m^2]
+#16   12 2303333.304 [m^2]
+#17    2   37017.857 [m^2]
+#18   12    1028.274 [m^2]
+#19    7 5724400.224 [m^2]
+#20    8 1860147.298 [m^2]
+#21   10   88431.546 [m^2]
+#22   17 2107961.283 [m^2]
+#23   14 3352172.576 [m^2]
+#24    5    2056.548 [m^2]
+#25   15 7040590.684 [m^2]
+#26   18 1658605.634 [m^2]
+
 

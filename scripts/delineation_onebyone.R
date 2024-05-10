@@ -29,12 +29,12 @@ wpfull <- wpfull %>%
 outlet <- wpfull 
 
 #option 2 of getting the points
-sites = read_csv("data_geo/sites.csv")
-site <- sites %>% 
+#sites = read_csv("data_geo/sites.csv")
+#site <- sites %>% 
   filter(Site == "USF4") 
 #convert it into barebones sf
 #tell it where your data is, what the coords are in the df, and the crs (FOR LAT LONG, WGS84)
-outlet <- st_as_sf(site, coords = c("lon", "lat"), 
+#outlet <- st_as_sf(site, coords = c("lon", "lat"), 
                    crs = '+proj=longlat +datum=WGS84 +no_defs')
 
 ##skip to here
