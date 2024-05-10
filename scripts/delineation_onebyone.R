@@ -25,33 +25,23 @@ wpdf<- wplist$waypoints
 # append dataframe from last index to a full waypoint object
 wpfull <- bind_rows(wpfull, wpdf)
 wpfull <- wpfull %>% 
-  filter(name == "USF12") 
+  filter(name == "USF4") 
 outlet <- wpfull 
 
+#option 2 of getting the points
+sites = read_csv("data_geo/sites.csv")
+site <- sites %>% 
+  filter(Site == "USF4") 
+#convert it into barebones sf
+#tell it where your data is, what the coords are in the df, and the crs (FOR LAT LONG, WGS84)
+outlet <- st_as_sf(site, coords = c("lon", "lat"), 
+                   crs = '+proj=longlat +datum=WGS84 +no_defs')
+
+##skip to here
 #reproject to utm 16
 outlet <- st_transform(outlet, crs = '+proj=utm +zone=16 +datum=NAD83 +units=m +no_defs') %>% 
   st_geometry()
 
-
-#read shapefile containing stream data
-#streams <- st_read(paste0("data_geo/area11_stream_network.shp"))
-
-####snap points to river####
-#snapped_points <- st_nearest_points(outlet, streams)
-#snapped_points
-#distances <- st_distance(outlet, st_geometry(snapped_points))
-#distances
-#min_index <- which.min(distances)
-#min_index
-#closest_point <- st_geometry(snapped_points)[min_index,]
-#closest_point
-#closest_coords <- st_coordinates(closest_point)[1,]
-#closest_coords
-#closest_df <- data.frame(X = closest_coords[1], Y = closest_coords[2])
-#closest_point_sf <- st_as_sf(closest_df, coords = c("X", "Y"), crs = st_crs(streams))
-#pour = as_Spatial(closest_point_sf) # make pour points = spatial object
-
-#outlet <- closest_point_sf
 
 ####PULL A DEM (digital elevation model)####
 # DEM - by AJS 
@@ -167,7 +157,7 @@ newmex_ws <- st_as_stars(newmex_ws) %>% st_as_sf(merge=T) #it says to skip but i
 #plots watershed shapefile
 mapview(newmex_ws)
 #writes shapefile to data folder
-st_write(newmex_ws, paste0("data_geo/site12.shp"), delete_layer = T)
+st_write(newmex_ws, paste0("data_geo/site4.shp"), delete_layer = T)
 
 #make site into point for mapping
 outlet
@@ -176,7 +166,7 @@ mapview(newmex_ws) + mapview(dem) + mapview(pour_sf)
 
 #crop the DEM to run again#crop the DEM to rpourun again
 #read the shapefile defining the extent to crop the DEM
-crop_extent <- st_read("data_geo/site12.shp")
+crop_extent <- st_read("data_geo/site4.shp")
 #crop the DEM to the specified extent
 cropped_DEM <- raster::crop(dem, crop_extent)
 
@@ -212,9 +202,9 @@ wbt_d8_flow_accumulation(
 #read stream raster
 streams <- raster(paste0("temp/cropped_flowaccum_newmex.tif")) #flow accumulation, indicating the number of cells that contribute flow to each cell in the landscape.
 #filter out low-flow areas or noise in the flow accumulation raster
-streams[streams<20] <- NA #THIS VALUE IS SOMETHING YOU PLAY AROUND WITH; there's no one answer
+#streams[streams<20] <- NA #THIS VALUE IS SOMETHING YOU PLAY AROUND WITH; there's no one answer
 #writes the modified streams raster to a new raster
-writeRaster(streams, paste0("temp/cropped_streams_newmex.tif"), overwrite=T)
+#writeRaster(streams, paste0("temp/cropped_streams_newmex.tif"), overwrite=T)
 
 #now use the new WBT functions to extract the streams!
 wbt_extract_streams(
@@ -242,12 +232,12 @@ plot(streams)
 
 #### check if points are on stream
 mapview(dem, maxpixels = 742182) + mapview(newmex_ws) + 
-  mapview(streams) + mapview(pour_sf) + mapview(plotsites)
+  mapview(streams) + mapview(pour_sf) 
 
 #export all of these so we have them!
-st_write(newmex_ws, paste0("data_geo/area12.shp"), delete_layer = T)
-st_write(streams, paste0("data_geo/area12_stream_network.shp"), delete_layer = T)
-writeRaster(cropped_DEM, paste0("data_geo/croppedDEM_area12.tif"), overwrite=T)
+st_write(newmex_ws, paste0("data_geo/area4.shp"), delete_layer = T)
+st_write(streams, paste0("data_geo/area4_stream_network.shp"), delete_layer = T)
+writeRaster(cropped_DEM, paste0("data_geo/croppedDEM_area4.tif"), overwrite=T)
 
 
 #TO GET THE AREA OF YOUR WATERSHED POLYGONS it has to be in sf format
@@ -259,8 +249,15 @@ plot(flowdir) + plot(streams)
 mapview(flowdir)+mapview(streams)+mapview(pour_sf)+mapview(newmex_ws)
 
 #add area values to new dataframe
-aareas = data.frame(newmex_ws)
+# Create an empty dataframe with column names
+aareas <- data.frame
 
+  
+sum(st_area(newmex_ws))
+
+#site 1: 3091.338 [m^2]
+#site 3: 28860197 [m^2]
+#site 3:
 #site 11: 5003890 [m^2]
 #site 12: 35499892 [m^2]
 #site 20: 19141915 [m^2]
