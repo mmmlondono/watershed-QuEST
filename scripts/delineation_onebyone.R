@@ -20,11 +20,11 @@ library(googledrive)
 sites = read_csv("data_geo/Site_lat_lon.csv")
 
 target <- c("USF7", "USF19")
-site <- sites %>% 
-  filter(SiteSub_ProjectB == target)
+site <- sites %>%
+  filter(SiteSub_ProjectB %in% target)
 #convert it into barebones sf
 #tell it where your data is, what the coords are in the df, and the crs (FOR LAT LONG, WGS84)
-outlet <- st_as_sf(sites, coords = c("Lon", "Lat"), 
+outlet <- st_as_sf(site, coords = c("Lon", "Lat"), 
                    crs = '+proj=longlat +datum=WGS84 +no_defs')
 
 ##skip to here
@@ -308,3 +308,5 @@ sum(st_area(newmex_ws))
 ##site 18: 114357 
 ##site 19: 104705.5 
 #site 20: 19141915 
+
+###Total: 37617340

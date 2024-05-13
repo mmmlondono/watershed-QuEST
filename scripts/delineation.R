@@ -17,26 +17,10 @@ library(tmaptools)
 library(googledrive)
 
 ####load data####
-
-# # Initialize empty data frame
-# wpfull <- NULL
-# # - Select first file from the list and import data into R object
-# wplist <- read_GPX("data_geo/wp.gpx")
-# # extract latitude, longituDe, elevation, time, name and comments and apppend to R dataframe
-# wpdf<- wplist$waypoints
-# # append dataframe from last index to a full waypoint object
-# wpfull <- bind_rows(wpfull, wpdf)
-# wpfull <- wpfull %>% 
-#   filter(name == "USF4") 
-# outlet <- wpfull 
-
-#option 2 of getting the points
 sites = read_csv("data_geo/Site_lat_lon.csv")
-site <- sites %>% 
-  filter(SiteSub_ProjecctB == "USF4") 
 #convert it into barebones sf
 #tell it where your data is, what the coords are in the df, and the crs (FOR LAT LONG, WGS84)
-outlet <- st_as_sf(site, coords = c("Lon", "Lat"), 
+outlet <- st_as_sf(sites, coords = c("Lon", "Lat"), 
                    crs = '+proj=longlat +datum=WGS84 +no_defs')
 
 ##skip to here
@@ -203,7 +187,7 @@ newmex_ws <- st_as_stars(newmex_ws) %>% st_as_sf(merge=T) #it says to skip but i
 #plots watershed shapefile
 mapview(newmex_ws)
 #writes shapefile to data folder
-st_write(newmex_ws, paste0("data_geo/site4.shp"), delete_layer = T)
+st_write(newmex_ws, paste0("data_geo/site.shp"), delete_layer = T)
 
 #make site into point for mapping
 outlet
@@ -212,7 +196,7 @@ mapview(newmex_ws) + mapview(dem) + mapview(pour_sf)
 
 #crop the DEM to run again#crop the DEM to rpourun again
 #read the shapefile defining the extent to crop the DEM
-crop_extent <- st_read("data_geo/site4.shp")
+crop_extent <- st_read("data_geo/site.shp")
 #crop the DEM to the specified extent
 cropped_DEM <- raster::crop(dem, crop_extent)
 
@@ -281,9 +265,9 @@ mapview(dem, maxpixels = 742182) + mapview(newmex_ws) +
   mapview(streams) + mapview(pour_sf) 
 
 #export all of these so we have them!
-st_write(newmex_ws, paste0("data_geo/area4.shp"), delete_layer = T)
-st_write(streams, paste0("data_geo/area4_stream_network.shp"), delete_layer = T)
-writeRaster(cropped_DEM, paste0("data_geo/croppedDEM_area4.tif"), overwrite=T)
+st_write(newmex_ws, paste0("data_geo/area.shp"), delete_layer = T)
+st_write(streams, paste0("data_geo/area_stream_network.shp"), delete_layer = T)
+writeRaster(cropped_DEM, paste0("data_geo/croppedDEM_area.tif"), overwrite=T)
 
 
 #TO GET THE AREA OF YOUR WATERSHED POLYGONS it has to be in sf format
@@ -294,16 +278,4 @@ flowdir = raster('temp/flowdir_newmex.tif')
 plot(flowdir) + plot(streams)
 mapview(flowdir)+mapview(streams)+mapview(pour_sf)+mapview(newmex_ws)
 
-#add area values to new dataframe
-# Create an empty dataframe with column names
-aareas <- data.frame
 
-  
-sum(st_area(newmex_ws))
-
-#site 1: 3091.338 [m^2]
-#site 3: 28860197 [m^2]
-#site 3:
-#site 11: 5003890 [m^2]
-#site 12: 35499892 [m^2]
-#site 20: 19141915 [m^2]
