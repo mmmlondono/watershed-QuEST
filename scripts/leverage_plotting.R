@@ -30,6 +30,7 @@ area1 <- st_read("data_geo/area1.shp")
 area3 <- st_read("data_geo/area3.shp")
 area5 <- st_read("data_geo/area5.shp")
 area6 <- st_read("data_geo/area6.shp")
+area7 <- st_read("data_geo/area7.shp")
 area13 <- st_read("data_geo/area13.shp")
 area14 <- st_read("data_geo/area14.shp")
 area15 <- st_read("data_geo/area15.shp")
@@ -70,18 +71,24 @@ mapview(area1, alpha.regions = 0., alpha = 5, lwd = 3, color = "white", legend =
   mapview(streams, legend = FALSE) + 
   mapview(DOC, cex = "NPOC..mg.C.L.", col.regions = "orange")
 
-#plot DOC with all areas
-mapview(area1, alpha.regions = 0., alpha = 5, lwd = 3, color = "white", legend = FALSE) + 
-  mapview(area3, col.regions = "lightgreen") + 
-  mapview(area5, col.regions = "tomato") +
-  mapview(area6, col.regions = "powderblue") +
-  mapview(area13, col.regions = "cornflowerblue") +
-  mapview(area14, col.regions = "yellow") +
-  mapview(area15, col.regions = "lightslateblue") +
-  mapview(area16, col.regions = "white") +
-  mapview(streams, legend = FALSE) + 
-  mapview(DOC, cex = "NPOC..mg.C.L.", col.regions = "hotpink")
 
+# Custom colors for each area
+area_colors <- c("USF03" = "lightgreen", "USF05" = "tomato", "USF06" = "powderblue", "USF07" = "white",
+                 "USF13" = "cornflowerblue", "USF14" = "gold", "USF15" = "lightslateblue", 
+                 "USF16" = "orangered")
+DOC$color <- area_colors[DOC$Sub_ProjectB]
+# Plot with mapview
+mapview(area1, alpha.regions = 0, alpha = 5, lwd = 3, color = "white", legend = FALSE) + 
+  mapview(area3, col.regions = "lightgreen", legend = FALSE) + 
+  mapview(area5, col.regions = "tomato", legend = FALSE) +
+  mapview(area6, col.regions = "powderblue", legend = FALSE) +
+  mapview(area7, col.regions = "white", legend = FALSE) +
+  mapview(area13, col.regions = "cornflowerblue", legend = FALSE) +
+  mapview(area14, col.regions = "gold", legend = FALSE) +
+  mapview(area15, col.regions = "lightslateblue", legend = FALSE) +
+  mapview(area16, col.regions = "orangered", legend = FALSE) +
+  mapview(streams, legend = FALSE) + 
+  mapview(DOC, zcol = "Sub_ProjectB", col.regions = area_colors, cex = "NPOC..mg.C.L.", legend = TRUE)
 
 #plot TDN
 #map
@@ -89,6 +96,24 @@ mapview(area1, alpha.regions = 0., alpha = 5, lwd = 3, color = "white", legend =
   mapview(area, col.regions = pal) + 
   mapview(streams, legend = FALSE) + 
   mapview(TDN, cex = "TDN..mg.N.L.", col.regions = "mediumaquamarine")
+
+# Custom colors for each area
+area_colors <- c("USF03" = "lightgreen", "USF05" = "tomato", "USF06" = "powderblue", "USF07" = "white",
+                 "USF13" = "cornflowerblue", "USF14" = "gold", "USF15" = "lightslateblue", 
+                 "USF16" = "orangered")
+TDN$color <- area_colors[TDN$Sub_ProjectB]
+# Plot with mapview
+mapview(area1, alpha.regions = 0, alpha = 5, lwd = 3, color = "white", legend = FALSE) + 
+  mapview(area3, col.regions = "lightgreen", legend = FALSE) + 
+  mapview(area5, col.regions = "tomato", legend = FALSE) +
+  mapview(area6, col.regions = "powderblue", legend = FALSE) +
+  mapview(area7, col.regions = "white", legend = FALSE) +
+  mapview(area13, col.regions = "cornflowerblue", legend = FALSE) +
+  mapview(area14, col.regions = "gold", legend = FALSE) +
+  mapview(area15, col.regions = "lightslateblue", legend = FALSE) +
+  mapview(area16, col.regions = "orangered", legend = FALSE) +
+  mapview(streams, legend = FALSE) + 
+  mapview(TDN, zcol = "Sub_ProjectB", col.regions = area_colors, cex = "TDN..mg.N.L.", legend = TRUE)
 
 
 ####plot with tmap###
