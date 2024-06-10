@@ -6,24 +6,24 @@ library(sf)
 #if using spatial points,
 library(sp)
 library(elevatr)
-#library(rgdal)
 library(mapview)
 library(stars)
-#library(rayshader)
 library("vroom")
 #whitebox::install_whitebox()
 library(whitebox)
 library(tmaptools)
 library(googledrive)
 
-####load data###
-sites = read_csv("data_geo/Site_lat_lon.csv")
+#############
+##load data##
+#############
+outlet = read_csv("data_geo/Site_lat_lon.csv")
 
-target <- c("USF7", "USF19")
-site <- sites %>%
+#select pour point of interest 
+target <- c("USF7")
+site <- outlet %>%
   filter(SiteSub_ProjectB %in% target)
-#convert it into barebones sf
-#tell it where your data is, what the coords are in the df, and the crs (FOR LAT LONG, WGS84)
+#convert it into barebones sf (FOR LAT LONG, WGS84)
 outlet <- st_as_sf(site, coords = c("Lon", "Lat"), 
                    crs = '+proj=longlat +datum=WGS84 +no_defs')
 
@@ -45,7 +45,6 @@ elevation = get_elev_raster(pour_sf, z = 11, clip = "bbox", expand = 10000) #wor
 #plot the elevation
 plot(elevation)
 
-#I don't know what this is for yet but...
 #save the elevation raster in a folder called temp
 writeRaster(elevation, paste0("temp/dem_newmex.tif"), overwrite = T)
 # Load DEM
@@ -78,7 +77,7 @@ mapview(dem) + mapview(pour_sf)
 getwd()
 temp <- "/Users/awebster2/Library/CloudStorage/Dropbox/CQNetwork/QuEST/ProjectPhase/watershed-QuEST"
 
-#These next lines are preprocessing steps in digital elevation model (DEM) - they are creating intermediate files
+#These next lines are pre-processing steps in digital elevation model (DEM) - they are creating intermediate files
 #1.1 -----
 #Prepares the DEM and delineates the watershed through a series of steps:
 writeRaster(dem, paste0("temp/demNM.tif"), overwrite = T)

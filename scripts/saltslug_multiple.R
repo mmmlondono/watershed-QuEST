@@ -39,6 +39,7 @@ Saltslugs <- googledrive::as_id("https://drive.google.com/drive/folders/1CVd8Edz
 # List all CSV files in the folder
 Saltslugs_csvs <- googledrive::drive_ls(path = Saltslugs, type = "csv")
 
+## Call all the files in the salt slugs folder ##
 # Create empty list to store data frames
 csv_list <- list()
 
@@ -74,20 +75,11 @@ for (i in seq_along(csv_list)) {
   csv_list[[i]] <- df
 }
 
-#### Check ####
-#this does not work yet
-for (i in seq_along(csv_list)) {
-     print(class(csv_list[[i]][[i]]))
-}
+### We want date to be POSIXct, and Cond and TempC to be numeric ###
 
-class(csv_list[["ProQ_Logdata_20240524_USF3.csv"]][["Temp.C."]])
-
-## We want date to be POSIXct, and Cond and TempC to be numeric
-
-
-##############################################################
-## Plot curves
-##############################################################
+#################
+## Plot curves ##
+#################
 
 # Visualize
 # Loop through each data frame in the list
@@ -100,11 +92,108 @@ for (i in seq_along(csv_list)) {
   ggsave(paste0("saltslug_figs/plot_", Saltslugs_csvs$name[i], ".png"))
 }
 
+###########################################
+## Determine the background conductivity ##
+###########################################
+## (1) 
+## Select area before or after the salt wave which is constant
+## you want to calculate the average background conductivity from the measurement
+
+# Load data frame with salt grams per site and injection time
+salt <- read.csv("saltslug/salt_240524.csv")
+# Convert the injection DateTime column to POSIXct
+salt$injection_time <- as.POSIXct(salt$injection_time, format = "%m/%d/%y %H:%M")
+
+###For calculations later on###
+## 1 g salt in 1 L of water gives cond=2100 uS / cm
+#multiply 2100 times the ammount of salt added to each site
+
+# Create a new column by multiplying the 'salt' column by 2100
+salt$Cond_mass <- salt$salt * 2100
+
+# Add injection time and salt values to data frames
+# Function to combine info
+combine_info <- function(df, info) {
+  merged_df <- merge(df, info, by = "DataID", all.x = TRUE)
+  return(merged_df)
+}
+
+csv_list <- lapply(csv_list, combine_info, info = salt)
+
+#### Using the change point time in the curve, we are going to calculate the background SpC ####
+# Loop through each data frame in the list
+for (i in seq_along(csv_list)) {
+  # Access the current data frame
+  df <- csv_list[[i]]
+  
+  # Get the change point from the SPC
+  cpt <- cpt.mean(df$SPC.uS.cm., penalty='SIC', method='PELT') 
+  # Get the change point
+  changepoint <- cpts(cpt)[1]
+  
+  # Calculate the indices for 40 to 2 seconds before the change point
+  start_idx <- changepoint - 40
+  end_idx <- changepoint - 2
+  
+  # Ensure the indices are within the valid range
+  if (start_idx < 1) {
+    start_idx <- 1
+  }
+  if (end_idx < 1) {
+    end_idx <- 1
+  }
+  
+  # If the end index is before the start index, skip this iteration
+  if (start_idx > end_idx) {
+    next
+  }
+  
+  # Calculate the average SPC for the 40 to 2 seconds before the changepoint
+  df$baseSPC <- mean(df$SPC.uS.cm.[start_idx:end_idx], na.rm = TRUE)
+  
+  # Get the DateTime corresponding to the change point
+  df$changepoint_datetime <- df$DateTime[changepoint]
+  
+  # Store the modified data frame back into the list
+  csv_list[[i]] <- df
+}
+
+
+####Create a time that it's looking for a changepoint. a minute before then
+
+###################################################
+## Visualize where the cut is to start measuring ##
+###################################################
+# Loop through each data frame in the list
+for (i in seq_along(csv_list)) {
+  # Access the current data frame
+  df <- csv_list[[i]]
+  # Plot
+  p <- ggplot(data = df, aes(x = DateTime, y = SPC.uS.cm.)) + 
+    geom_point() + ggtitle(paste(Saltslugs_csvs$name[i])) +
+    geom_vline(xintercept = df$changepoint_datetime[[1]], color = "red", linetype = "dashed") +
+    geom_vline(xintercept = df$injection_time[[1]], color = "blue", linetype = "dashed")
+  ggsave(paste0("saltslug_figs/changepoint_", Saltslugs_csvs$name[i], ".png"))
+}
+
+##########################################################
+## Estimate conductivity slug based on mass of Cl added ##
+##########################################################
+## (2)
 
 ################
 ## Estimate Q ##
 ################
-## Equation
+## Calculate Q!
+## Units = L/sec
+#example of how it looks for ONE salt slug
+#Q_USF5 <- Qint(as.numeric(log_20240524_USF5$DateTime), log_20240524_USF5$SPC, USF5, USF5_Cond_mass)
+
+# Create empty df to store Q data 
+Q_list <- data.frame(DataID = c(), 
+                     Q = c())
+
+### Equation ###
 Qint<-function(time,cond, bkg, condmass){
   condcorr<-cond-bkg
   
@@ -116,81 +205,16 @@ Qint<-function(time,cond, bkg, condmass){
   Q
   
 }
-
-## (1) Determine the background conductivity
-## Select area before or after the salt wave which is constant
-## you want to calculate the average background conductivity from the measurement
+### Apply the equation to each salt slug in your folder ###
 # Loop through each data frame in the list
 for (i in seq_along(csv_list)) {
   # Access the current data frame
   df <- csv_list[[i]]
-  
-  # Get the changepoint from the SPC
-  cpt <- cpt.mean(df$SPC.uS.cm., penalty='SIC', method='PELT') 
-  # Get the location of the changepoint
-  changepoint <- cpts(cpt)[1]
-  # Calculate the average of the data before the changepoint, ignoring the first n measurements
-  n = 15
-  average_before_change[i] <- mean(df$SPC.uS.cm.[(n + 1):(changepoint - 1)])
-  # Get the DateTime corresponding to the changepoint
-  changepoint_datetime[i] <- df$DateTime[changepoint]
+  # Indicate all variables and values for the equation 
+  df$Q<- Qint(as.numeric(df$DateTime), df$SPC.uS.cm., df$baseSPC[[1]], df$Cond_mass[[1]])
 
+  csv_list[[i]] <-  df
 }
-
-# Visualize where the cut is to start measuring
-# Loop through each data frame in the list
-for (i in seq_along(csv_list)) {
-  # Access the current data frame
-  df <- csv_list[[i]]
-  # Plot
-  p <- ggplot(data = df, aes(x = DateTime, y = SPC.uS.cm.)) + 
-    geom_point() + ggtitle(paste(csv_list$name[i])) +
-    geom_vline(xintercept = changepoint_datetime, color = "red", linetype = "dashed") +
-  ggsave(paste0("saltslug_figs/changepoint_", csv_list$name[i], ".png"))
-}
-
-
-## (2) Estimate conductivity slug based on mass of Cl added
-## 1 g salt in 1 L of water gives cond=2100 uS / cm
-#multiply 2100 times the ammount of salt added to each site
-
-# Create a new column by multiplying the 'salt' column by 2100
-salt$Cond_mass <- salt$salt * 2100
-
-# Add newly calculated values to data frames
-# Function to combine info
-combine_info <- function(df, info) {
-  merged_df <- merge(df, info, by = "DataID", all.x = TRUE)
-  return(merged_df)
-}
-
-csv_list_combined <- lapply(csv_list, combine_info, info = salt)
-
-## Calculate Q!
-## Units = L/sec
-#example of how it looks for one saltslug
-#Q_USF5 <- Qint(as.numeric(log_20240524_USF5$DateTime), log_20240524_USF5$COND.uS.cm., USF5, USF5_Cond_mass)
-
-# Create empty df to store Q data 
-Q_list <- data.frame(DataID = c(), 
-                     Q = c())
-
-# Loop through each data frame in the list
-for (i in seq_along(csv_list_combined)) {
-  # Access the current data frame
-  df <- csv_list_combined[[i]]
-  # Combine Date and Time columns into a new DateTime column
-  df$Q[1] <- Qint(as.numeric(df$DateTime), df$SPC.uS.cm., df$spc_base[[1]], df$Cond_mass[[1]])
-
-  csv_list_combined[[i]] <-  df
-}
-
-Q_Lolomai <- Qint(as.numeric(dat_Lolomai$DateTime), dat_Lolomai$Cond, bg_cond_Lolomai, Oak_Lolomai_Cond_mass)
-
-# Update the data frame in the list
-csv_list[[i]] <- df
-Summary
-## USF5 20204-08-24 Q = 812.2298 L/sec (0.81 cms)
 
 #######################
 ## Estimate Velocity ##
@@ -203,9 +227,7 @@ inj_time_USF5 <- as.POSIXct("2024-05-24 14:30:00")
 ## Distance upstream
 USF5_dist_upstream <- 40 # Oak @ Lolomai: 40 m upstream
 
-v_USF5 <- USF5_dist_upstream /(as.numeric(log_20240524_USF5[which.max(log_20240524_USF5$COND.uS.cm.),]$DateTime - inj_time_USF5)*60)
-#0.5853659 m/s
-
+v_USF5 <- USF5_dist_upstream /(as.numeric(log_20240524_USF5[which.max(log_20240524_USF5$SPC.uS.cm.),]$DateTime - inj_time_USF5)*60)
 
 #############################
 ## Estimate mean depth (z) ##
@@ -218,12 +240,5 @@ v_USF5 <- USF5_dist_upstream /(as.numeric(log_20240524_USF5[which.max(log_202405
 ## w is average width (m)
 ## v is velocity (m/sec)
 
-## Enter average width measurement in m
-# Oak @ Lolomai: 8.6
-# Oak @ Willow: 11.8
-# Blaine: 2.05
-# Beaver: 8.92  (from upstream of cattle crossing -- need better)
-
 ## Calculate effective depth
 z_USF5<- (Q_USF5/1000)/(2*v_USF5)
-#0.6937796

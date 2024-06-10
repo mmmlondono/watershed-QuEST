@@ -1,0 +1,166 @@
+---
+title: "MaySCAN"
+format: revealjs
+editor: visual
+---
+
+## 
+
+```{r}
+library(google)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(scales)
+library(tidyr)
+
+USF12 <- gsheet2tbl('https://docs.google.com/spreadsheets/d/1ZGOK3h6zq6GhEB_qEtrG6pfy6GelFNvZ/edit#gid=997808826')
+USF20 <- gsheet2tbl('https://docs.google.com/spreadsheets/d/1QVyFybhqIAg-2fNjA0MPkJoahgeLngAc/edit#gid=896654951')
+```
+
+USF12
+
+```{r}
+#cleaning
+colnames(USF12) <- USF12[1,]
+USF12 <- USF12[-c(1,2,3),]
+colnames(USF12)[1] ="TimeStamp"
+USF12$TimeStamp <- as.POSIXct(USF12$TimeStamp)
+USF12$`DOCeq [mg/l] - Measured value` <- as.numeric(USF12$`DOCeq [mg/l] - Measured value`) 
+USF12$`NO3-Neq [mg/l] - Measured value` <- as.numeric(USF12$`NO3-Neq [mg/l] - Measured value`)
+USF12$`NO3eq [mg/l] - Measured value` <- as.numeric(USF12$`NO3eq [mg/l] - Measured value`)
+USF12$`TOCeq [mg/l] - Measured value` <- as.numeric(USF12$`TOCeq [mg/l] - Measured value`)
+USF12$`TSSeq [mg/l] - Measured value` <- as.numeric(USF12$`TSSeq [mg/l] - Measured value`)
+USF12$`Temperature_19 [°C] - Measured value` <- as.numeric(USF12$`Temperature_19 [°C] - Measured value`)
+
+glimpse(USF12)
+
+```
+
+```{r}
+
+DOC12 <- ggplot(USF12, aes(x=TimeStamp, y=`DOCeq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45))
+DOC12
+
+NO312 <- ggplot(USF12, aes(x=TimeStamp, y=USF12$`NO3eq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45))
+NO312
+
+NO3N12 <- ggplot(USF12, aes(x=TimeStamp, y=USF12$`NO3-Neq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) 
+NO3N12
+
+TOC12 <- ggplot(USF12, aes(x=TimeStamp, y=USF12$`TOCeq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) 
+TOC12
+
+
+TSS12 <- ggplot(USF12, aes(x=TimeStamp, y=USF12$`TSSeq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) 
+TSS12
+
+Temp12 <- ggplot(USF12, aes(x=TimeStamp, y=USF12$`Temperature_19 [°C] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) 
+Temp12
+
+```
+
+```{r}
+Complete12 <- ggplot(USF12) +
+  geom_line(aes(x=TimeStamp, y=USF12$`Temperature_19 [°C] - Measured value`, color='Temperature')) +
+  geom_line(aes(x=TimeStamp, y=USF12$`TSSeq [mg/l] - Measured value`, color='TSS')) +
+  geom_line(aes(x=TimeStamp, y=USF12$`TOCeq [mg/l] - Measured value`, color='TOC')) +
+  geom_line(aes(x=TimeStamp, y=USF12$`NO3-Neq [mg/l] - Measured value`, color='NO3-N')) +
+  geom_line(aes(x=TimeStamp, y=USF12$`NO3eq [mg/l] - Measured value`, color='NO3')) +
+  geom_line(aes(x=TimeStamp, y=USF12$`DOCeq [mg/l] - Measured value`, color='DOC')) +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) +
+  ylab("Measured")
+Complete12
+```
+
+USF20
+
+```{r}
+#cleaning
+colnames(USF20) <- USF20[1,]
+USF20 <- USF20[-c(1,2,3),]
+colnames(USF20)[1] ="TimeStamp"
+USF20 <- USF20[-c(1:84),]
+USF20$TimeStamp <- as.POSIXct(USF20$TimeStamp)
+USF20$`DOCeq [mg/l] - Measured value` <- as.numeric(USF20$`DOCeq [mg/l] - Measured value`) 
+USF20$`NO3-Neq [mg/l] - Measured value` <- as.numeric(USF20$`NO3-Neq [mg/l] - Measured value`)
+USF20$`NO3eq [mg/l] - Measured value` <- as.numeric(USF20$`NO3eq [mg/l] - Measured value`)
+USF20$`TOCeq [mg/l] - Measured value` <- as.numeric(USF20$`TOCeq [mg/l] - Measured value`)
+USF20$`TSSeq [mg/l] - Measured value` <- as.numeric(USF20$`TSSeq [mg/l] - Measured value`)
+USF20$`Temperature_19 [°C] - Measured value` <- as.numeric(USF20$`Temperature_19 [°C] - Measured value`)
+
+```
+
+```{r}
+DOC20 <- ggplot(USF20, aes(x=TimeStamp, y=`DOCeq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45))
+DOC20
+
+NO320 <- ggplot(USF20, aes(x=TimeStamp, y=USF20$`NO3eq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45))
+NO320
+
+NO3N20 <- ggplot(USF20, aes(x=TimeStamp, y=USF20$`NO3-Neq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) 
+NO3N20
+
+TOC20 <- ggplot(USF20, aes(x=TimeStamp, y=USF20$`TOCeq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) 
+TOC20
+
+
+TSS20 <- ggplot(USF20, aes(x=TimeStamp, y=USF20$`TSSeq [mg/l] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) 
+TSS20
+
+Temp20 <- ggplot(USF20, aes(x=TimeStamp, y=USF20$`Temperature_19 [°C] - Measured value`)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) 
+Temp20
+
+```
+
+```{r}
+Complete20 <- ggplot(USF20) +
+  geom_line(aes(x=TimeStamp, y=USF20$`Temperature_19 [°C] - Measured value`, color='Temperature')) +
+  geom_line(aes(x=TimeStamp, y=USF20$`TSSeq [mg/l] - Measured value`, color='TSS')) +
+  geom_line(aes(x=TimeStamp, y=USF20$`TOCeq [mg/l] - Measured value`, color='TOC')) +
+  geom_line(aes(x=TimeStamp, y=USF20$`NO3-Neq [mg/l] - Measured value`, color='NO3-N')) +
+  geom_line(aes(x=TimeStamp, y=USF20$`NO3eq [mg/l] - Measured value`, color='NO3')) +
+  geom_line(aes(x=TimeStamp, y=USF20$`DOCeq [mg/l] - Measured value`, color='DOC')) +
+  scale_x_datetime(date_breaks = "1 day", date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle=45)) +
+  ylab("Measured")
+Complete20
+```

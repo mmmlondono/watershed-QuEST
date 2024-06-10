@@ -1,4 +1,6 @@
-####PACKAGES####
+############
+##PACKAGES##
+############
 library(tidyverse)
 library(dplyr)
 library(raster)
@@ -16,45 +18,45 @@ library(whitebox)
 library(tmaptools)
 library(googledrive)
 
-####load data####
-sites = read_csv("data_geo/Site_lat_lon.csv")
+#############
+##load data##
+#############
+#this is a csv file with at least the site name and lat long info for that site
+outlet = read_csv("data_geo/Site_lat_lon.csv")
 #convert it into barebones sf
 #tell it where your data is, what the coords are in the df, and the crs (FOR LAT LONG, WGS84)
-outlet <- st_as_sf(sites, coords = c("Lon", "Lat"), 
+outlet = st_as_sf(outlet, coords = c("Lon", "Lat"), 
                    crs = '+proj=longlat +datum=WGS84 +no_defs')
 
 ##skip to here
 #reproject to utm 16
-outlet <- st_transform(outlet, crs = '+proj=utm +zone=16 +datum=NAD83 +units=m +no_defs') %>% 
+outlet = st_transform(outlet, crs = '+proj=utm +zone=16 +datum=NAD83 +units=m +no_defs') %>% 
   st_geometry()
 
-
-####PULL A DEM (digital elevation model)####
-# DEM - by AJS 
+##############
+##PULL A DEM##
+##############
+### (digital elevation model) ###
+## DEM - by AJS ##
 pour = as_Spatial(outlet) # make pour points = spatial object
 pour # check dataset
-#convert SpatialPoints to sf (simple features)
-pour_sf <- st_as_sf(pour) 
+#convert Spatial Points to sf (simple features)
+pour_sf = st_as_sf(pour) 
 #use the sf object in get_elev_raster
-elevation = get_elev_raster(pour_sf, z = 11, clip = "bbox", expand = 10000) #works at 8
+dem = get_elev_raster(pour_sf, z = 11, clip = "bbox", expand = 10000) #works at 8
 
 #plot the elevation
-plot(elevation)
+plot(dem)
 
-#I don't know what this is for yet but...
 #save the elevation raster in a folder called temp
-writeRaster(elevation, paste0("temp/dem_newmex.tif"), overwrite = T)
-# Load DEM
-dem<-raster(paste0("temp/dem_newmex.tif"))
-dem # matches pour projections 
-
-# Plot to check
-plot(dem) 
+writeRaster(dem, paste0("temp/dem_newmex.tif"), overwrite = T)
 
 #plot with mapview to check
 mapview(dem) + mapview(pour_sf)
 
-####PREP DEM AND DELINEATE####
+##########################
+##PREP DEM AND DELINEATE##
+##########################
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #Step 1: prep DEM and delineate
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,9 +74,10 @@ mapview(dem) + mapview(pour_sf)
 #whitebox functions do not work just using project directory, so you have to set the working directory
 #we are using all the files that are stored in the temp directory, so:
 getwd()
-temp <- "/Users/awebster2/Library/CloudStorage/Dropbox/CQNetwork/QuEST/ProjectPhase/watershed-QuEST"
+#copy and paste that directory if that's where you are working from and make it a temp
+temp <- "/Users/manuelalondono/Documents/watershed-QuEST"
 
-#These next lines are preprocessing steps in digital elevation model (DEM) - they are creating intermediate files
+#These next lines are pre-processing steps in digital elevation model (DEM) - they are creating intermediate files
 #1.1 -----
 #Prepares the DEM and delineates the watershed through a series of steps:
 writeRaster(dem, paste0("temp/demNM.tif"), overwrite = T)
@@ -103,7 +106,7 @@ wbt_d8_pointer(
   wd = temp)
 
 
-#1.5.1 -----
+#1.5 -----
 #Computes flow accumulation
 wbt_d8_flow_accumulation(
   input = "temp/dem_newmex_breach.tif",
@@ -123,7 +126,11 @@ wbt_snap_pour_points(
 )
 
 ###+++++ AJW code added to check that snapped pour point is on the correct flow accumulation stream ++++++++###
-# NOTE: The pour point MUST be on the right flow accumulation stream for the watershed to delinate correctly. If the point is not on the correct stream after snapping, the only way to fix it is to play around with moving the lat/lon closer to the target stream by picking it in Gaia GPS, then editing the lat/lon into the lat/lon csv, then rerunning the code to this point and checking that it got on the right stream, then delineating. You can also try changing the snap_dist in the snapping function, but that won't work if the point isn't closer to the right stream (it will likely end up on a different stream, or get stuck in non-stream land).
+# NOTE: The pour point MUST be on the right flow accumulation stream for the watershed to delineate correctly. 
+#If the point is not on the correct stream after snapping, the only way to fix it is to play around with moving the lat/lon closer to the target stream, 
+#then editing the lat/lon into the lat/lon csv, then rerunning the code to this point and checking that it got on the right stream, then delineating. 
+#You can also try changing the snap_dist in the snapping function, but that won't work if the point isn't closer to the right stream 
+#(it will likely end up on a different stream, or get stuck in non-stream land).
 
 #read stream raster
 streams <- raster("temp/flowaccum_newmex.tif") #flow accumulation, indicating the number of cells that contribute flow to each cell in the landscape.
@@ -165,7 +172,6 @@ mapview(dem, maxpixels = 742182) +
 
 ###+++++ end AJW code added to check that snapped pour point is on the correct flow accumulation stream ++++++++###
 
-
 #1.7 -----
 #Delineates the watershed 
 wbt_watershed(
@@ -189,12 +195,12 @@ mapview(newmex_ws)
 #writes shapefile to data folder
 st_write(newmex_ws, paste0("data_geo/site.shp"), delete_layer = T)
 
-#make site into point for mapping
-outlet
 #plots dem raster with newmex shapefile
 mapview(newmex_ws) + mapview(dem) + mapview(pour_sf)
 
-#crop the DEM to run again#crop the DEM to rpourun again
+#############################
+##crop the DEM and run again##
+#############################
 #read the shapefile defining the extent to crop the DEM
 crop_extent <- st_read("data_geo/site.shp")
 #crop the DEM to the specified extent
@@ -204,7 +210,7 @@ cropped_DEM <- raster::crop(dem, crop_extent)
 plot(cropped_DEM)
 plot(newmex_ws, add = TRUE)
 
-#this all worked, so run the entire WBT series again to try making streams off of the smaller DEM
+#Run the entire WBT series again to try making streams off of the smaller DEM
 writeRaster(cropped_DEM, paste0("temp/cropped_dem_newmex.tif"), overwrite=T)
 #didn't change
 wbt_fill_single_cell_pits(
@@ -228,7 +234,7 @@ wbt_d8_flow_accumulation(
   wd = temp
 )
 
-### RUN FROM HERE ----
+#### Rerun with cropped streams ####
 #read stream raster
 streams <- raster(paste0("temp/cropped_flowaccum_newmex.tif")) #flow accumulation, indicating the number of cells that contribute flow to each cell in the landscape.
 #filter out low-flow areas or noise in the flow accumulation raster
@@ -269,8 +275,7 @@ st_write(newmex_ws, paste0("data_geo/area.shp"), delete_layer = T)
 st_write(streams, paste0("data_geo/area_stream_network.shp"), delete_layer = T)
 writeRaster(cropped_DEM, paste0("data_geo/croppedDEM_area.tif"), overwrite=T)
 
-
-#TO GET THE AREA OF YOUR WATERSHED POLYGONS it has to be in sf format
+#GET THE AREA OF YOUR WATERSHED POLYGONS (it has to be in sf format)
 sum(st_area(newmex_ws))
 
 #Check area is ok with flowdir
