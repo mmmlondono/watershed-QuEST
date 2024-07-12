@@ -22,8 +22,8 @@ library(googledrive)
 ##load data##
 #############
 #this is a csv file with at least the site name and lat long info for that site
-outlet = read_csv("data_geo/Site_lat_lon.csv")
-#convert it into barebones sf
+outlet = read_csv("data/outlet.csv")
+#convert it into bare bones sf
 #tell it where your data is, what the coords are in the df, and the crs (FOR LAT LONG, WGS84)
 outlet = st_as_sf(outlet, coords = c("Lon", "Lat"), 
                    crs = '+proj=longlat +datum=WGS84 +no_defs')
@@ -32,6 +32,16 @@ outlet = st_as_sf(outlet, coords = c("Lon", "Lat"),
 #reproject to utm 16
 outlet = st_transform(outlet, crs = '+proj=utm +zone=16 +datum=NAD83 +units=m +no_defs') %>% 
   st_geometry()
+
+###################################
+##clear folders that we will use ##
+###################################
+# List and delete all files in the folder
+files <- list.files(path = "data_geo", full.names = TRUE)
+file.remove(files)
+
+files <- list.files(path = "temp", full.names = TRUE)
+file.remove(files)
 
 ##############
 ##PULL A DEM##
@@ -201,7 +211,7 @@ mapview(newmex_ws) + mapview(dem) + mapview(pour_sf)
 #############################
 ##crop the DEM and run again##
 #############################
-#read the shapefile defining the extent to crop the DEM
+#read the shape file defining the extent to crop the DEM
 crop_extent <- st_read("data_geo/site.shp")
 #crop the DEM to the specified extent
 cropped_DEM <- raster::crop(dem, crop_extent)
